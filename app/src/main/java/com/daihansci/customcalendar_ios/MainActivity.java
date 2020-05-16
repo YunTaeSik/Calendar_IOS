@@ -3,6 +3,7 @@ package com.daihansci.customcalendar_ios;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.databinding.DataBindingUtil;
 import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
@@ -17,39 +18,33 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
     private CalendarListBinding binding;
-    private CalendarListViewModel model;
+    private CalendarAdapter calendarAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
-        model = ViewModelProviders.of(this).get(CalendarListViewModel.class);
-        binding.setModel(model);
+        binding.setVariable(BR.model, new ViewModelProvider(this).get(CalendarListViewModel.class));
         binding.setLifecycleOwner(this);
 
+        binding.getModel().initCalendarList();
+
+        StaggeredGridLayoutManager manager = new StaggeredGridLayoutManager(7, StaggeredGridLayoutManager.VERTICAL);
+        calendarAdapter = new CalendarAdapter();
+        binding.pagerCalendar.setLayoutManager(manager);
+        binding.pagerCalendar.setAdapter(calendarAdapter);
         observe();
-        if (model != null) {
-            model.initCalendarList();
-        }
+
     }
 
     private void observe() {
-        model.mCalendarList.observe(this, new Observer<ArrayList<Object>>() {
+        binding.getModel().mCalendarList.observe(this, new Observer<ArrayList<Object>>() {
             @Override
             public void onChanged(ArrayList<Object> objects) {
-                RecyclerView view = binding.pagerCalendar;
-                CalendarAdapter adapter = (CalendarAdapter) view.getAdapter();
-                if (adapter != null) {
-                    adapter.setCalendarList(objects);
-                } else {
-                    StaggeredGridLayoutManager manager = new StaggeredGridLayoutManager(7, StaggeredGridLayoutManager.VERTICAL);
-                    adapter = new CalendarAdapter(objects);
-                    view.setLayoutManager(manager);
-                    view.setAdapter(adapter);
-                    if (model.mCenterPosition >= 0) {
-                        view.scrollToPosition(model.mCenterPosition);
-                    }
+                calendarAdapter.submitList(objects);
+                if (binding.getModel().mCenterPosition > 0) {
+                    binding.pagerCalendar.scrollToPosition(binding.getModel().mCenterPosition);
                 }
             }
         });

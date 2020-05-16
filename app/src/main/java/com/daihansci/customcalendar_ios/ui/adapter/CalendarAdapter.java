@@ -10,35 +10,44 @@ import com.daihansci.customcalendar_ios.databinding.EmptyDayBinding;
 import com.daihansci.customcalendar_ios.ui.viewmodel.CalendarHeaderViewModel;
 import com.daihansci.customcalendar_ios.ui.viewmodel.CalendarViewModel;
 import com.daihansci.customcalendar_ios.ui.viewmodel.EmptyViewModel;
+import com.google.gson.Gson;
 
 import java.util.Calendar;
 import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.databinding.DataBindingUtil;
+import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 
-public class CalendarAdapter extends RecyclerView.Adapter {
+public class CalendarAdapter extends ListAdapter<Object, RecyclerView.ViewHolder> {
     private final int HEADER_TYPE = 0;
     private final int EMPTY_TYPE = 1;
     private final int DAY_TYPE = 2;
 
-    private List<Object> mCalendarList;
 
-    public CalendarAdapter(List<Object> calendarList) {
-        mCalendarList = calendarList;
+    public CalendarAdapter() {
+        super(new DiffUtil.ItemCallback<Object>() {
+            @Override
+            public boolean areItemsTheSame(@NonNull Object oldItem, @NonNull Object newItem) {
+                return oldItem == newItem;
+            }
+
+            @Override
+            public boolean areContentsTheSame(@NonNull Object oldItem, @NonNull Object newItem) {
+                Gson gson = new Gson();
+                return gson.toJson(oldItem).equals(gson.toJson(newItem));
+            }
+        });
     }
 
-    public void setCalendarList(List<Object> calendarList) {
-        mCalendarList = calendarList;
-        notifyDataSetChanged();
-    }
 
     @Override
     public int getItemViewType(int position) { //뷰타입 나누기
-        Object item = mCalendarList.get(position);
+        Object item = getItem(position);
         if (item instanceof Long) {
             return HEADER_TYPE; //날짜 타입
         } else if (item instanceof String) {
@@ -74,7 +83,7 @@ public class CalendarAdapter extends RecyclerView.Adapter {
         int viewType = getItemViewType(position);
         if (viewType == HEADER_TYPE) { //날짜 타입 꾸미기
             HeaderViewHolder holder = (HeaderViewHolder) viewHolder;
-            Object item = mCalendarList.get(position);
+            Object item = getItem(position);
             CalendarHeaderViewModel model = new CalendarHeaderViewModel();
             if (item instanceof Long) {
                 model.setHeaderDate((Long) item);
@@ -86,21 +95,13 @@ public class CalendarAdapter extends RecyclerView.Adapter {
             holder.setViewModel(model);
         } else if (viewType == DAY_TYPE) { // 일자 타입 꾸미기
             DayViewHolder holder = (DayViewHolder) viewHolder;
-            Object item = mCalendarList.get(position);
+            Object item = getItem(position);
             CalendarViewModel model = new CalendarViewModel();
             if (item instanceof Calendar) {
                 model.setCalendar((Calendar) item);
             }
             holder.setViewModel(model);
         }
-    }
-
-    @Override
-    public int getItemCount() {
-        if (mCalendarList != null) {
-            return mCalendarList.size();
-        }
-        return 0;
     }
 
 
